@@ -1,4 +1,4 @@
-package br.com.nksolucoes.nk_order_ms;
+package br.com.nksolucoes.nkorderms;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
