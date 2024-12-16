@@ -17,9 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 
 @Slf4j
@@ -93,7 +93,8 @@ public class OrderService {
 			 new RuntimeException("Order not found"));
 	}
 
-	public Page<OrderResponse> findAllOrders(Pageable pageable) {
+	public Page<OrderResponse> findAllOrders(Integer page, Integer size) {
+		Pageable pageable = PageRequest.of(page, size);
 		Page<Order> orders = orderRepository.findAll(pageable);
 		return orders.map(orderMapper::entityToResponse);
 	}

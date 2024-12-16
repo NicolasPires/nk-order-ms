@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,8 +49,9 @@ public class OrderController {
 			@ApiResponse(responseCode = "200", description = "ok")
 	})
 	@GetMapping("/all")
-	public Page<OrderResponse> getAllOrders(Pageable pageable) {
-		return orderService.findAllOrders(pageable);
+	public Page<OrderResponse> getAllOrders(@RequestParam Integer page,
+											@RequestParam Integer size) {
+		return orderService.findAllOrders(page, size);
 	}
 
 }
