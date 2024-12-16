@@ -15,11 +15,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.ToString.Exclude;
 
 
 @Entity
@@ -28,7 +28,6 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = "orderId")
 @ToString
 @Builder
 public class Order {
@@ -45,6 +44,7 @@ public class Order {
     private OrderStatusEnum orderStatus;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Exclude
     private List<Item> items;
 
     @Column(name = "notes", length = 500)

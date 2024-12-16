@@ -9,7 +9,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring", uses = {ItemMapper.class})
 public interface OrderMapper {
 
-	@Mapping(target = "orderId", ignore = true)
 	@Mapping(target = "totalAmount", ignore = true)
 	@Mapping(target = "orderStatus", ignore = true)
 	Order requestToEntity(OrderRequest request);

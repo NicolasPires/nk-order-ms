@@ -40,7 +40,6 @@ public class OrderService {
 	@Autowired
 	private OrderCalculatedGateway orderCalculatedGateway;
 
-	@Transactional
 	public OrderResponse createAndCalculateASingleOrder(OrderRequest orderRequest) {
 		LOGGER.info("Order request processing started");
 
@@ -63,10 +62,11 @@ public class OrderService {
 			calculateOrders(ordersToProcess);
 		});
 
-    	return orderMapper.entityToResponse(savedOrder);
+		OrderResponse orderResponse = orderMapper.entityToResponse(savedOrder);
+
+    	return orderResponse;
 	}
 
-	@Transactional
 	@Synchronized
 	public void calculateOrders(List<Order> ordersToCalculate) {
 		LOGGER.info("Calculating orders and sending complete orders to the queue");
@@ -82,9 +82,9 @@ public class OrderService {
 			LOGGER.info("OrderId: {}, Total Amount Calculated: {}", order.getOrderId(), totalAmount);
 
 			order.setOrderStatus(OrderStatusEnum.CALCULATED);
-			orderRepository.save(order);
+			Order updatedOrder = orderRepository.save(order);
 
-			orderCalculatedGateway.sendCalculatedOrderEvent(order);
+			orderCalculatedGateway.sendCalculatedOrderEvent(updatedOrder);
 		});
 	}
 
