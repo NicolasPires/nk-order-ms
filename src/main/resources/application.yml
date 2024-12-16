@@ -25,3 +25,17 @@ spring:
       bindings:
         orderCalculatedProducer-out-0:
           destination: nk.order.ms.event.order-calculated
+          producer:
+            required-groups: nk-order-ms-group
+      rabbit:
+        bindings:
+          orderCalculatedProducer-out-0:
+            producer:
+              exchange-type: topic # ou direct, dependendo da necessidade
+              auto-bind-dlq: true  # Cria Dead Letter Queue automaticamente
+              bindings: # Define a fila e os parâmetros
+                queue-name: nk-order-queue
+              queue-properties: # Define a persistência e exclusão
+                durable: true
+                exclusive: false
+                auto-delete: false
