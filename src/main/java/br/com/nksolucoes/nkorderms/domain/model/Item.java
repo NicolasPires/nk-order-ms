@@ -1,7 +1,9 @@
 package br.com.nksolucoes.nkorderms.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,10 +34,6 @@ public class Item {
     @Column(name = "item_id", nullable = false, length = 50)
     private Long itemId;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
-
     @Column(name = "description", nullable = false, length = 255)
     private String description;
 
@@ -45,7 +43,12 @@ public class Item {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
-    private BigDecimal subtotal;
+    @Column(name = "subtotal", precision = 10, scale = 2)
+    private BigDecimal subtotal = BigDecimal.ZERO;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 }
 
