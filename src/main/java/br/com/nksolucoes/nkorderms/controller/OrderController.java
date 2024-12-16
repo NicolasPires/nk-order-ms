@@ -2,6 +2,7 @@ package br.com.nksolucoes.nkorderms.controller;
 
 import br.com.nksolucoes.nkorderms.domain.model.Order;
 import br.com.nksolucoes.nkorderms.domain.records.request.OrderRequest;
+import br.com.nksolucoes.nkorderms.domain.records.response.OrderResponse;
 import br.com.nksolucoes.nkorderms.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +18,7 @@ public class OrderController {
 	private OrderService orderService;
 
 	@PostMapping
-	public Order processOrder(@RequestBody OrderRequest orderRequest) {
+	public OrderResponse processOrder(@RequestBody OrderRequest orderRequest) {
 		return orderService.createAndCalculateASingleOrder(orderRequest);
 	}
 

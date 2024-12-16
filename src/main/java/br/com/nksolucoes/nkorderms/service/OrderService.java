@@ -4,6 +4,7 @@ import br.com.nksolucoes.nkorderms.domain.enums.OrderStatusEnum;
 import br.com.nksolucoes.nkorderms.domain.mapper.OrderMapper;
 import br.com.nksolucoes.nkorderms.domain.model.Order;
 import br.com.nksolucoes.nkorderms.domain.records.request.OrderRequest;
+import br.com.nksolucoes.nkorderms.domain.records.response.OrderResponse;
 import br.com.nksolucoes.nkorderms.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,24 +34,30 @@ public class OrderService {
 	private ItemService itemService;
 
 	@Transactional
-	public Order createAndCalculateASingleOrder(OrderRequest orderRequest) {
+	public OrderResponse createAndCalculateASingleOrder(OrderRequest orderRequest) {
 		LOGGER.info("Order request processing started");
 
-		Order order = orderMapper.toEntity(orderRequest);
-		order.getItems().forEach(item -> item.setOrder(order));
+		Order order = orderMapper.requestToEntity(orderRequest);
+		order.getItems().forEach(item -> {
+			item.setOrder(order);
+			item.setSubtotal(BigDecimal.ZERO);
+		});
 		order.setOrderStatus(OrderStatusEnum.CREATED);
+		order.setTotalAmount(BigDecimal.ZERO);
+
 		Order savedOrder = orderRepository.save(order);
 
 		LOGGER.info("Order creation completed. OrderId: {}", savedOrder.getOrderId());
 
-		List<Order> ordersToProcess = List.of(savedOrder);
+		List<Order> ordersToProcess = new ArrayList<>();
+		ordersToProcess.add(savedOrder);
 
 		CompletableFuture.runAsync(() -> {
 			LOGGER.info("Calculating orders and sending complete orders to the queue");
 			calculateOrders(ordersToProcess);
 		});
 
-    	return order;
+    	return orderMapper.entityToResponse(savedOrder);
 	}
 
 	private void calculateOrders(List<Order> ordersToCalculate) {

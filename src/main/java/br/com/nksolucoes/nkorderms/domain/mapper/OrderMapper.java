@@ -2,6 +2,7 @@ package br.com.nksolucoes.nkorderms.domain.mapper;
 
 import br.com.nksolucoes.nkorderms.domain.model.Order;
 import br.com.nksolucoes.nkorderms.domain.records.request.OrderRequest;
+import br.com.nksolucoes.nkorderms.domain.records.response.OrderResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -11,5 +12,7 @@ public interface OrderMapper {
 	@Mapping(target = "orderId", ignore = true)
 	@Mapping(target = "totalAmount", ignore = true)
 	@Mapping(target = "orderStatus", ignore = true)
-	Order toEntity(OrderRequest request);
+	Order requestToEntity(OrderRequest request);
+
+	OrderResponse entityToResponse(Order order);
 }
