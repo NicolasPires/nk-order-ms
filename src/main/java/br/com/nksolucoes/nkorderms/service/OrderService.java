@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,5 +80,15 @@ public class OrderService {
 			//TODO Simula envio para o Kafka (substitua com lógica real)
 			//sendOrderToQueue(order);
 		});
+	}
+
+	public OrderResponse findById(Long id) {
+		 return orderRepository.findById(id).map(orderMapper::entityToResponse).orElseThrow(() ->
+			 new RuntimeException("Order not found"));
+	}
+
+	public Page<OrderResponse> findAllOrders(Pageable pageable) {
+		Page<Order> orders = orderRepository.findAll(pageable);
+		return orders.map(orderMapper::entityToResponse);
 	}
 }
