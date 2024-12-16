@@ -5,11 +5,13 @@ import br.com.nksolucoes.nkorderms.domain.mapper.OrderMapper;
 import br.com.nksolucoes.nkorderms.domain.model.Order;
 import br.com.nksolucoes.nkorderms.domain.records.request.OrderRequest;
 import br.com.nksolucoes.nkorderms.domain.records.response.OrderResponse;
+import br.com.nksolucoes.nkorderms.producer.OrderCalculatedGateway;
 import br.com.nksolucoes.nkorderms.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,9 @@ public class OrderService {
 	@Autowired
 	private ItemService itemService;
 
+	@Autowired
+	private OrderCalculatedGateway orderCalculatedGateway;
+
 	@Transactional
 	public OrderResponse createAndCalculateASingleOrder(OrderRequest orderRequest) {
 		LOGGER.info("Order request processing started");
@@ -55,14 +60,16 @@ public class OrderService {
 		ordersToProcess.add(savedOrder);
 
 		CompletableFuture.runAsync(() -> {
-			LOGGER.info("Calculating orders and sending complete orders to the queue");
 			calculateOrders(ordersToProcess);
 		});
 
     	return orderMapper.entityToResponse(savedOrder);
 	}
 
-	private void calculateOrders(List<Order> ordersToCalculate) {
+	@Transactional
+	@Synchronized
+	public void calculateOrders(List<Order> ordersToCalculate) {
+		LOGGER.info("Calculating orders and sending complete orders to the queue");
 		ordersToCalculate.forEach(order -> {
 			LOGGER.info("Starting the order calculation process. OrderId: {}", order.getOrderId());
 
@@ -77,8 +84,7 @@ public class OrderService {
 			order.setOrderStatus(OrderStatusEnum.CALCULATED);
 			orderRepository.save(order);
 
-			//TODO Simula envio para o Kafka (substitua com lógica real)
-			//sendOrderToQueue(order);
+			orderCalculatedGateway.sendCalculatedOrderEvent(order);
 		});
 	}
 

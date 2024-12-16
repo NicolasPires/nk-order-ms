@@ -33,7 +33,6 @@ public class OrderController {
 
 	@GetMapping("/all")
 	public Page<OrderResponse> getAllOrders(Pageable pageable) {
-		// Chama o serviço para obter pedidos paginados com a conversão já aplicada
 		return orderService.findAllOrders(pageable);
 	}
 
