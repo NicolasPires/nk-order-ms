@@ -9,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -36,8 +38,9 @@ public class Order {
     @Column(name = "order_id", nullable = false, length = 50)
     private Long orderId;
 
-    @Column(name = "customer_name", nullable = false, length = 200)
-    private String customerName;
+    @ManyToOne
+    @JoinColumn(name = "customer_id", nullable = false)
+    private Customer customer;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status", nullable = false)
@@ -52,4 +55,7 @@ public class Order {
 
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;
+
+    @Column(name = "unique_hash", unique = true)
+    private String uniqueHash;
 }

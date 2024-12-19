@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record OrderResponse(Long orderId,
-							String customerName,
+							CustomerResponse customer,
 							OrderStatusEnum orderStatus,
 							List<ItemResponse> items,
 							String notes,

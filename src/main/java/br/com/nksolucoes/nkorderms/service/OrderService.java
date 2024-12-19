@@ -2,100 +2,112 @@ package br.com.nksolucoes.nkorderms.service;
 
 import br.com.nksolucoes.nkorderms.domain.enums.OrderStatusEnum;
 import br.com.nksolucoes.nkorderms.domain.mapper.OrderMapper;
+import br.com.nksolucoes.nkorderms.domain.model.Customer;
+import br.com.nksolucoes.nkorderms.domain.model.Item;
 import br.com.nksolucoes.nkorderms.domain.model.Order;
 import br.com.nksolucoes.nkorderms.domain.records.request.OrderRequest;
 import br.com.nksolucoes.nkorderms.domain.records.response.OrderResponse;
+import br.com.nksolucoes.nkorderms.exceptions.DuplicateOrderException;
+import br.com.nksolucoes.nkorderms.exceptions.OrderNotFoundException;
 import br.com.nksolucoes.nkorderms.producer.OrderCalculatedGateway;
 import br.com.nksolucoes.nkorderms.repository.OrderRepository;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.codec.digest.DigestUtils;
 
+import java.math.BigDecimal;
+import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
+	private final OrderRepository orderRepository;
+	private final OrderMapper orderMapper;
+	private final ItemService itemService;
+	private final CustomerService customerService;
+	private final OrderCalculatedGateway orderCalculatedGateway;
 
-	@Autowired
-	private OrderRepository orderRepository;
-
-	@Autowired
-	private OrderMapper orderMapper;
-
-	@Autowired
-	private ItemService itemService;
-
-	@Autowired
-	private OrderCalculatedGateway orderCalculatedGateway;
-
+	@Transactional
 	public OrderResponse createAndCalculateASingleOrder(OrderRequest orderRequest) {
-		LOGGER.info("Order request processing started");
+		log.info("Processing order request for customer document: {}", orderRequest.customer());
 
 		Order order = orderMapper.requestToEntity(orderRequest);
+		order.setUniqueHash(generateOrderHash(order));
+
+		if (orderRepository.existsByUniqueHash(order.getUniqueHash())) {
+			throw new DuplicateOrderException("Order already in the database! please modify your order. uniqueHash: " + order.getUniqueHash());
+		}
+
+		Customer customer = customerService.createOrUpdateCustomer(orderRequest.customer());
+		order.setCustomer(customer);
+
 		order.getItems().forEach(item -> {
 			item.setOrder(order);
 			item.setSubtotal(BigDecimal.ZERO);
 		});
+
 		order.setOrderStatus(OrderStatusEnum.CREATED);
 		order.setTotalAmount(BigDecimal.ZERO);
 
 		Order savedOrder = orderRepository.save(order);
+		log.info("Order created with ID: {}", savedOrder.getOrderId());
 
-		LOGGER.info("Order creation completed. OrderId: {}", savedOrder.getOrderId());
+		calculateOrdersAsync(List.of(savedOrder));
 
-		List<Order> ordersToProcess = new ArrayList<>();
-		ordersToProcess.add(savedOrder);
-
-		CompletableFuture.runAsync(() -> {
-			calculateOrders(ordersToProcess);
-		});
-
-		OrderResponse orderResponse = orderMapper.entityToResponse(savedOrder);
-
-    	return orderResponse;
+		return orderMapper.entityToResponse(savedOrder);
 	}
 
-	@Synchronized
-	public void calculateOrders(List<Order> ordersToCalculate) {
-		LOGGER.info("Calculating orders and sending complete orders to the queue");
-		ordersToCalculate.forEach(order -> {
-			LOGGER.info("Starting the order calculation process. OrderId: {}", order.getOrderId());
+	@Async
+	public void calculateOrdersAsync(List<Order> ordersToCalculate) {
+		log.info("Calculating orders asynchronously...");
+		ordersToCalculate.forEach(this::processOrderCalculation);
+	}
 
-			BigDecimal totalAmount = order.getItems().stream()
-					.map(itemService::calculateSubTotalOrderItem)
-					.reduce(BigDecimal.ZERO, BigDecimal::add);
+	@Transactional
+	public void processOrderCalculation(Order order) {
+		log.info("Calculating total amount for Order ID: {}", order.getOrderId());
 
-			order.setTotalAmount(BigDecimal.valueOf(totalAmount.doubleValue()));
+		BigDecimal totalAmount = order.getItems().stream()
+				.map(itemService::calculateSubTotal)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
 
-			LOGGER.info("OrderId: {}, Total Amount Calculated: {}", order.getOrderId(), totalAmount);
+		order.setTotalAmount(totalAmount);
+		order.setOrderStatus(OrderStatusEnum.CALCULATED);
 
-			order.setOrderStatus(OrderStatusEnum.CALCULATED);
-			Order updatedOrder = orderRepository.save(order);
+		Order updatedOrder = orderRepository.save(order);
+		orderCalculatedGateway.sendCalculatedOrderEvent(updatedOrder);
 
-			orderCalculatedGateway.sendCalculatedOrderEvent(updatedOrder);
-		});
+		log.info("Order ID: {} calculated. Total Amount: {}", updatedOrder.getOrderId(), totalAmount);
 	}
 
 	public OrderResponse findById(Long id) {
-		 return orderRepository.findById(id).map(orderMapper::entityToResponse).orElseThrow(() ->
-			 new RuntimeException("Order not found"));
+		return orderRepository.findById(id)
+				.map(orderMapper::entityToResponse)
+				.orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + id));
 	}
 
 	public Page<OrderResponse> findAllOrders(Integer page, Integer size) {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Order> orders = orderRepository.findAll(pageable);
 		return orders.map(orderMapper::entityToResponse);
+	}
+
+	public String generateOrderHash(Order order) {
+		String hashSource = order.getCustomer().getDocument() + ":" +
+				order.getCustomer().getName() +
+				order.getCustomer().getEmail() +
+				order.getCustomer().getPhone() +
+				order.getItems().stream()
+						.map(Item::getDescription)
+						.sorted()
+						.toList();
+		return DigestUtils.md5Hex(hashSource.getBytes());
 	}
 }
