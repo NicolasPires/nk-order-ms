@@ -9,9 +9,9 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ItemMapper {
 
-	@Mapping(target = "description", source = "description")
-	@Mapping(target = "quantity", source = "quantity")
-	@Mapping(target = "unitPrice", source = "unitPrice")
+//	@Mapping(target = "description", source = "description")
+//	@Mapping(target = "quantity", source = "quantity")
+//	@Mapping(target = "unitPrice", source = "unitPrice")
 	Item requestToEntity(ItemRequest request);
 
 	ItemResponse entityToResponse(Item item);

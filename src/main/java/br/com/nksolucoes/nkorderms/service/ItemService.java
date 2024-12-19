@@ -6,8 +6,6 @@ import br.com.nksolucoes.nkorderms.domain.records.request.ItemRequest;
 import br.com.nksolucoes.nkorderms.exceptions.ItemValidationException;
 import br.com.nksolucoes.nkorderms.repository.ItemRepository;
 import java.math.BigDecimal;
-import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service

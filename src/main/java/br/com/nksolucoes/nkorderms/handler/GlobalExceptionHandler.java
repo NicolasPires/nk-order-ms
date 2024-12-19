@@ -1,5 +1,8 @@
-package br.com.nksolucoes.nkorderms.exceptions;
+package br.com.nksolucoes.nkorderms.handler;
 
+import br.com.nksolucoes.nkorderms.exceptions.DuplicateOrderException;
+import br.com.nksolucoes.nkorderms.exceptions.ItemValidationException;
+import br.com.nksolucoes.nkorderms.exceptions.OrderNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

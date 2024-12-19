@@ -4,5 +4,5 @@ public record CustomerResponse(Long customerId,
 							   String document,
 		 					   String name,
 							   String address,
-							   String phoneNumber,
+							   String phone,
 							   String email) {}
