@@ -11,6 +11,7 @@ import br.com.nksolucoes.nkorderms.exceptions.DuplicateOrderException;
 import br.com.nksolucoes.nkorderms.exceptions.OrderNotFoundException;
 import br.com.nksolucoes.nkorderms.producer.OrderCalculatedGateway;
 import br.com.nksolucoes.nkorderms.repository.OrderRepository;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -105,9 +106,11 @@ public class OrderService {
 				order.getCustomer().getEmail() +
 				order.getCustomer().getPhone() +
 				order.getItems().stream()
-						.map(Item::getDescription)
-						.sorted()
-						.toList();
+						.sorted((item1, item2) -> item1.getDescription().compareTo(item2.getDescription()))
+						.map(item -> item.getDescription() + ":" +
+								item.getQuantity() + ":" +
+								item.getUnitPrice())
+						.collect(Collectors.joining("|"));
 		return DigestUtils.md5Hex(hashSource.getBytes());
 	}
 }
