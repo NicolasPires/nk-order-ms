@@ -13,19 +13,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>nk-order-ms</name>
 	<description>Order processing project</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+
 	<properties>
 		<java.version>19</java.version>
 		<lombok.version>1.18.36</lombok.version>
@@ -37,10 +25,13 @@
 		<mockito-core.version>5.5.0</mockito-core.version>
 		<mockito-junit-jupiter.version>5.5.0</mockito-junit-jupiter.version>
 		<jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+		<maven-surefire-plugin.verson>3.5.2</maven-surefire-plugin.verson>
 		<sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
 		<sonar.host.url>http://localhost:9000</sonar.host.url>
 		<sonar.projectKey>nk-order-ms</sonar.projectKey>
 		<sonar.token>sqp_277d7266f8e28d7d2a1693a1fec53d815c318c99</sonar.token>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.coverage.exclusions>**/config/**,**/handler/**,**/*Exception.java</sonar.coverage.exclusions>
 	</properties>
 
 	<dependencyManagement>
@@ -82,7 +73,6 @@
 			<artifactId>lombok</artifactId>
 			<version>${lombok.version}</version>
 			<optional>true</optional>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -114,7 +104,7 @@
 		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
-			<version>1.16.0</version>
+			<version>${commons-codec.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -201,6 +191,7 @@
 				<version>${jacoco-maven-plugin.version}</version>
 				<executions>
 					<execution>
+						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
@@ -211,6 +202,14 @@
 						<goals>
 							<goal>report</goal>
 						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
+							<outputDirectory>${project.build.directory}/site/jacoco</outputDirectory>
+							<formats>
+								<format>XML</format>
+								<format>HTML</format>
+							</formats>
+						</configuration>
 					</execution>
 				</executions>
 				<configuration>
@@ -219,15 +218,6 @@
 						<exclude>com/sun/**</exclude>
 						<exclude>javax/**</exclude>
 					</excludes>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<argLine>
-						-javaagent:${settings.localRepository}/org/jacoco/org.jacoco.agent/0.8.8/org.jacoco.agent-0.8.8-runtime.jar=excludes=sun/*,com/sun/*
-					</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
